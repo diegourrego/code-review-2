@@ -59,6 +59,10 @@ func (r *RepositoryReadVehicleMap) FindByBrandAndYearRange(brand string, startYe
 		}
 	}
 
+	if len(v) == 0 {
+		err = internal.ErrRepositoryNotFound
+	}
+
 	return
 }
 
