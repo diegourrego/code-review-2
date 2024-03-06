@@ -35,14 +35,19 @@ func (h *HandlerVehicle) FindByColorAndYear() http.HandlerFunc {
 		// process
 		v, err := h.sv.FindByColorAndYear(color, year)
 		if err != nil {
-			response.Error(w, http.StatusInternalServerError, "internal error")
+			switch {
+			case errors.Is(err, internal.ErrRepositoryNotFound):
+				response.Error(w, http.StatusNotFound, "No vehicles were found for the provided criteria")
+			default:
+				response.Error(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 
 		// response
 		response.JSON(w, http.StatusOK, map[string]any{
 			"message": "vehicles found",
-			"data": v,
+			"data":    v,
 		})
 	}
 }
@@ -66,14 +71,19 @@ func (h *HandlerVehicle) FindByBrandAndYearRange() http.HandlerFunc {
 		// process
 		v, err := h.sv.FindByBrandAndYearRange(brand, startYear, endYear)
 		if err != nil {
-			response.Error(w, http.StatusInternalServerError, "internal error")
+			switch {
+			case errors.Is(err, internal.ErrRepositoryNotFound):
+				response.Error(w, http.StatusNotFound, "No vehicles were found for the provided criteria")
+			default:
+				response.Error(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 
 		// response
 		response.JSON(w, http.StatusOK, map[string]any{
 			"message": "vehicles found",
-			"data": v,
+			"data":    v,
 		})
 	}
 }
@@ -99,7 +109,7 @@ func (h *HandlerVehicle) AverageMaxSpeedByBrand() http.HandlerFunc {
 		// response
 		response.JSON(w, http.StatusOK, map[string]any{
 			"message": "average max speed found",
-			"data": average,
+			"data":    average,
 		})
 	}
 }
@@ -125,7 +135,7 @@ func (h *HandlerVehicle) AverageCapacityByBrand() http.HandlerFunc {
 		// response
 		response.JSON(w, http.StatusOK, map[string]any{
 			"message": "average capacity found",
-			"data": average,
+			"data":    average,
 		})
 	}
 }
@@ -163,7 +173,7 @@ func (h *HandlerVehicle) SearchByWeightRange() http.HandlerFunc {
 		// response
 		response.JSON(w, http.StatusOK, map[string]any{
 			"message": "vehicles found",
-			"data": v,
+			"data":    v,
 		})
 	}
 }

@@ -5,6 +5,7 @@ import "errors"
 var (
 	// ErrRepositoryInvalidFind is an error that represents an invalid find
 	ErrRepositoryInvalidFind = errors.New("repository: invalid find")
+	ErrRepositoryNotFound    = errors.New("repository: No vehicles were found for the provided criteria")
 )
 
 // RepositoryReadVehicle is an interface that represents a vehicle repository

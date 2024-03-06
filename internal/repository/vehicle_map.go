@@ -41,6 +41,10 @@ func (r *RepositoryReadVehicleMap) FindByColorAndYear(color string, fabricationY
 		}
 	}
 
+	if len(v) == 0 {
+		err = internal.ErrRepositoryNotFound
+	}
+
 	return
 }
 
