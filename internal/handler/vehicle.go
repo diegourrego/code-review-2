@@ -166,7 +166,12 @@ func (h *HandlerVehicle) SearchByWeightRange() http.HandlerFunc {
 		// process
 		v, err := h.sv.SearchByWeightRange(query, ok)
 		if err != nil {
-			response.Error(w, http.StatusInternalServerError, "internal error")
+			switch {
+			case errors.Is(err, internal.ErrServiceNoVehicles):
+				response.Error(w, http.StatusNotFound, "no vehicles found under criteria")
+			default:
+				response.Error(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 
