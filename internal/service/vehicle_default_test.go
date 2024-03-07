@@ -242,3 +242,84 @@ func TestServiceVehicleDefault_AverageMaxSpeedByBrand(t *testing.T) {
 
 	})
 }
+
+func TestServiceVehicleDefault_AverageCapacityByBrand(t *testing.T) {
+	t.Run("success -  case01: should returns an average capacity", func(t *testing.T) {
+		// Arrange
+		carBrand := "Chevrolet"
+		rp := repository.NewVehicleMapMock()
+		expectedResult := map[int]internal.Vehicle{
+			11: {
+				Id: 11,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "G-Series 2500",
+					Registration:    "9292",
+					Color:           "Mauv",
+					FabricationYear: 1996,
+					Capacity:        3,
+					MaxSpeed:        239,
+					FuelType:        "gas",
+					Transmission:    "manual",
+					Weight:          152.87,
+					Dimensions: internal.Dimensions{
+						Height: 50.84,
+						Length: 0,
+						Width:  216.53,
+					},
+				},
+			},
+			14: {
+				Id: 14,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "Suburban 2500",
+					Registration:    "051",
+					Color:           "Pink",
+					FabricationYear: 1997,
+					Capacity:        5,
+					MaxSpeed:        173,
+					FuelType:        "gas",
+					Transmission:    "automatic",
+					Weight:          65.95,
+					Dimensions: internal.Dimensions{
+						Height: 40.51,
+						Length: 0,
+						Width:  135.28,
+					},
+				},
+			},
+		}
+		expectedAverageCapacity := (3 + 5) / len(expectedResult)
+		rp.On("FindByBrand", carBrand).Return(expectedResult, nil)
+		sv := NewServiceVehicleDefault(rp)
+
+		// Act
+		averageCapacityObtained, errorObtained := sv.AverageCapacityByBrand(carBrand)
+
+		// Assert
+		require.Equal(t, expectedAverageCapacity, averageCapacityObtained)
+		require.Nil(t, errorObtained)
+		rp.AssertExpectations(t)
+
+	})
+
+	t.Run("failure -  case01: should returns a no vehicles", func(t *testing.T) {
+		// Arrange
+		carBrand := "Chevrolet"
+		rp := repository.NewVehicleMapMock()
+		expectedResult := map[int]internal.Vehicle{}
+		expectedAverageCapacity := 0
+		rp.On("FindByBrand", carBrand).Return(expectedResult, nil)
+		sv := NewServiceVehicleDefault(rp)
+
+		// Act
+		averageCapacityObtained, errorObtained := sv.AverageCapacityByBrand(carBrand)
+
+		// Assert
+		require.Equal(t, expectedAverageCapacity, averageCapacityObtained)
+		require.EqualError(t, errorObtained, "service: no vehicles")
+		rp.AssertExpectations(t)
+
+	})
+}

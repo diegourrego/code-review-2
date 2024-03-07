@@ -326,3 +326,66 @@ func TestHandlerVehicle_AverageMaxSpeedByBrand(t *testing.T) {
 
 	})
 }
+
+func TestHandlerVehicle_AverageCapacityByBrand(t *testing.T) {
+	t.Run("success - case 01: should returns an average capacity", func(t *testing.T) {
+		//Arrange
+		carBrand := "Chevrolet"
+		sv := service.NewVehicleDefaultMock()
+		sv.On("AverageCapacityByBrand", carBrand).Return(3, nil)
+		hd := NewHandlerVehicle(sv)
+		hdFunc := hd.AverageCapacityByBrand()
+
+		//Act
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/average_capacity/brand/Chevrolet", nil)
+		chiCtx := chi.NewRouteContext()
+		chiCtx.URLParams.Add("brand", carBrand)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+		res := httptest.NewRecorder()
+		hdFunc(res, req)
+
+		//Assert
+		expectedCode := http.StatusOK
+		expectedBody := `{
+		   "data": 3,
+		   "message": "average capacity found"
+		}`
+		expectedHeader := http.Header{
+			"Content-Type": []string{"application/json; charset=utf-8"},
+		}
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, expectedHeader, res.Header())
+
+	})
+
+	t.Run("failure - case 01: should returns an error for an unknown brand", func(t *testing.T) {
+		//Arrange
+		carBrand := "BYD"
+		sv := service.NewVehicleDefaultMock()
+		sv.On("AverageCapacityByBrand", carBrand).Return(0, internal.ErrServiceNoVehicles)
+		hd := NewHandlerVehicle(sv)
+		hdFunc := hd.AverageCapacityByBrand()
+
+		//Act
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/average_capacity/brand/BYD", nil)
+		chiCtx := chi.NewRouteContext()
+		chiCtx.URLParams.Add("brand", carBrand)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+		res := httptest.NewRecorder()
+		hdFunc(res, req)
+
+		//Assert
+		expectedCode := http.StatusNotFound
+		expectedBody := `{"status":"Not Found","message":"vehicles not found"}`
+		expectedHeader := http.Header{
+			"Content-Type": []string{"application/json"},
+		}
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, expectedHeader, res.Header())
+
+	})
+}
