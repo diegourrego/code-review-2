@@ -323,3 +323,142 @@ func TestServiceVehicleDefault_AverageCapacityByBrand(t *testing.T) {
 
 	})
 }
+
+func TestServiceVehicleDefault_SearchByWeightRange(t *testing.T) {
+	t.Run("success - case01: should returns a vehicles list filtered", func(t *testing.T) {
+		// Arrange
+		expectedCarsListFiltered := map[int]internal.Vehicle{
+			11: {
+				Id: 11,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "G-Series 2500",
+					Registration:    "9292",
+					Color:           "Mauv",
+					FabricationYear: 1996,
+					Capacity:        3,
+					MaxSpeed:        239,
+					FuelType:        "gas",
+					Transmission:    "manual",
+					Weight:          152.87,
+					Dimensions: internal.Dimensions{
+						Height: 50.84,
+						Length: 0,
+						Width:  216.53,
+					},
+				},
+			},
+		}
+
+		query := internal.SearchQuery{
+			FromWeight: 100.0,
+			ToWeight:   200.0,
+		}
+
+		ok := true
+
+		rp := repository.NewVehicleMapMock()
+		rp.On("FindByWeightRange", query.FromWeight, query.ToWeight).Return(expectedCarsListFiltered, nil)
+
+		sv := NewServiceVehicleDefault(rp)
+
+		// Act
+		carListObtained, errorObtained := sv.SearchByWeightRange(query, ok)
+
+		// Assert
+		require.Equal(t, expectedCarsListFiltered, carListObtained)
+		require.Nil(t, errorObtained)
+		rp.AssertExpectations(t)
+	})
+
+	t.Run("success - case02: should returns a complete list of vehicles", func(t *testing.T) {
+		// Arrange
+		expectedCarList := map[int]internal.Vehicle{
+			11: {
+				Id: 11,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "G-Series 2500",
+					Registration:    "9292",
+					Color:           "Mauv",
+					FabricationYear: 1996,
+					Capacity:        3,
+					MaxSpeed:        239,
+					FuelType:        "gas",
+					Transmission:    "manual",
+					Weight:          152.87,
+					Dimensions: internal.Dimensions{
+						Height: 50.84,
+						Length: 0,
+						Width:  216.53,
+					},
+				},
+			},
+			14: {
+				Id: 14,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "Suburban 2500",
+					Registration:    "051",
+					Color:           "Pink",
+					FabricationYear: 1997,
+					Capacity:        5,
+					MaxSpeed:        173,
+					FuelType:        "gas",
+					Transmission:    "automatic",
+					Weight:          65.95,
+					Dimensions: internal.Dimensions{
+						Height: 40.51,
+						Length: 0,
+						Width:  135.28,
+					},
+				},
+			},
+		}
+
+		query := internal.SearchQuery{
+			FromWeight: 0.0,
+			ToWeight:   0.0,
+		}
+
+		ok := false
+
+		rp := repository.NewVehicleMapMock()
+		rp.On("FindAll").Return(expectedCarList, nil)
+
+		sv := NewServiceVehicleDefault(rp)
+
+		// Act
+		carListObtained, errorObtained := sv.SearchByWeightRange(query, ok)
+
+		// Assert
+		require.Equal(t, expectedCarList, carListObtained)
+		require.Nil(t, errorObtained)
+		rp.AssertExpectations(t)
+	})
+
+	t.Run("failure - case01: should returns an error when it can't find cars under criteria", func(t *testing.T) {
+		// Arrange
+		expectedCarsListFiltered := map[int]internal.Vehicle{}
+
+		query := internal.SearchQuery{
+			FromWeight: 520.4,
+			ToWeight:   600.4,
+		}
+
+		ok := true
+
+		rp := repository.NewVehicleMapMock()
+		rp.On("FindByWeightRange", query.FromWeight, query.ToWeight).Return(expectedCarsListFiltered, nil)
+
+		sv := NewServiceVehicleDefault(rp)
+
+		// Act
+		carListObtained, errorObtained := sv.SearchByWeightRange(query, ok)
+
+		// Assert
+		require.Equal(t, expectedCarsListFiltered, carListObtained)
+		require.EqualError(t, errorObtained, "service: no vehicles")
+		rp.AssertExpectations(t)
+	})
+}
