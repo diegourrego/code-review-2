@@ -47,7 +47,7 @@ func (s *ServiceVehicleDefault) AverageMaxSpeedByBrand(brand string) (a float64,
 	a = totalSpeed / float64(len(v))
 	return
 }
-		
+
 // AverageCapacityByBrand is a method that returns the average capacity of the vehicles by brand
 func (s *ServiceVehicleDefault) AverageCapacityByBrand(brand string) (a int, err error) {
 	// get vehicles by brand
@@ -55,7 +55,7 @@ func (s *ServiceVehicleDefault) AverageCapacityByBrand(brand string) (a int, err
 	if err != nil {
 		return
 	}
-	
+
 	// check if there are vehicles
 	if len(v) == 0 {
 		err = internal.ErrServiceNoVehicles
@@ -80,6 +80,12 @@ func (s *ServiceVehicleDefault) SearchByWeightRange(query internal.SearchQuery, 
 	}
 
 	v, err = s.rp.FindByWeightRange(query.FromWeight, query.ToWeight)
+
+	// Error handling
+	if len(v) == 0 {
+		err = internal.ErrServiceNoVehicles
+		return
+	}
+
 	return
 }
-	
