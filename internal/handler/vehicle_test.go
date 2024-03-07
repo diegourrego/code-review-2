@@ -389,3 +389,219 @@ func TestHandlerVehicle_AverageCapacityByBrand(t *testing.T) {
 
 	})
 }
+
+func TestHandlerVehicle_SearchByWeightRange(t *testing.T) {
+	t.Run("success - case01: should returns a list of vehicles", func(t *testing.T) {
+		// Arrange
+		expectedCarsListFiltered := map[int]internal.Vehicle{
+			11: {
+				Id: 11,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "G-Series 2500",
+					Registration:    "9292",
+					Color:           "Mauv",
+					FabricationYear: 1996,
+					Capacity:        3,
+					MaxSpeed:        239,
+					FuelType:        "gas",
+					Transmission:    "manual",
+					Weight:          152.87,
+					Dimensions: internal.Dimensions{
+						Height: 50.84,
+						Length: 0,
+						Width:  216.53,
+					},
+				},
+			},
+		}
+
+		query := internal.SearchQuery{
+			FromWeight: 100.0,
+			ToWeight:   200.0,
+		}
+
+		ok := true
+		sv := service.NewVehicleDefaultMock()
+		sv.On("SearchByWeightRange", query, ok).Return(expectedCarsListFiltered, nil)
+		hd := NewHandlerVehicle(sv)
+
+		// Act
+		r := chi.NewRouter()
+		r.Get("/vehicles/weight", hd.SearchByWeightRange())
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/weight?weight_min=100&weight_max=200", nil)
+		res := httptest.NewRecorder()
+		r.ServeHTTP(res, req)
+
+		// Assert
+		expectedCode := http.StatusOK
+		expectedBody := `{
+		   "data": {
+		       "11": {
+		           "Id": 11,
+		           "Brand": "Chevrolet",
+		           "Model": "G-Series 2500",
+		           "Registration": "9292",
+		           "Color": "Mauv",
+		           "FabricationYear": 1996,
+		           "Capacity": 3,
+		           "MaxSpeed": 239,
+		           "FuelType": "gas",
+		           "Transmission": "manual",
+		           "Weight": 152.87,
+		           "Height": 50.84,
+		           "Length": 0,
+		           "Width": 216.53
+		       }
+		   },
+		   "message": "vehicles found"
+		}`
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, "application/json; charset=utf-8", res.Header().Get("Content-Type"))
+		sv.AssertExpectations(t)
+
+	})
+
+	t.Run("success - case02: should returns a complete list of vehicles", func(t *testing.T) {
+		// Arrange
+		expectedCarsList := map[int]internal.Vehicle{
+			11: {
+				Id: 11,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "G-Series 2500",
+					Registration:    "9292",
+					Color:           "Mauv",
+					FabricationYear: 1996,
+					Capacity:        3,
+					MaxSpeed:        239,
+					FuelType:        "gas",
+					Transmission:    "manual",
+					Weight:          152.87,
+					Dimensions: internal.Dimensions{
+						Height: 50.84,
+						Length: 0,
+						Width:  216.53,
+					},
+				},
+			},
+			14: {
+				Id: 14,
+				VehicleAttributes: internal.VehicleAttributes{
+					Brand:           "Chevrolet",
+					Model:           "Suburban 2500",
+					Registration:    "051",
+					Color:           "Pink",
+					FabricationYear: 1997,
+					Capacity:        5,
+					MaxSpeed:        173,
+					FuelType:        "gas",
+					Transmission:    "automatic",
+					Weight:          65.95,
+					Dimensions: internal.Dimensions{
+						Height: 40.51,
+						Length: 0,
+						Width:  135.28,
+					},
+				},
+			},
+		}
+
+		query := internal.SearchQuery{
+			FromWeight: 0.0,
+			ToWeight:   0.0,
+		}
+
+		ok := false
+		sv := service.NewVehicleDefaultMock()
+		sv.On("SearchByWeightRange", query, ok).Return(expectedCarsList, nil)
+		hd := NewHandlerVehicle(sv)
+
+		// Act
+		r := chi.NewRouter()
+		r.Get("/vehicles/weight", hd.SearchByWeightRange())
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/weight", nil)
+		res := httptest.NewRecorder()
+		r.ServeHTTP(res, req)
+
+		// Assert
+		expectedCode := http.StatusOK
+		expectedBody := `{
+			   "data": {
+			       "11": {
+			           "Id": 11,
+			           "Brand": "Chevrolet",
+			           "Model": "G-Series 2500",
+			           "Registration": "9292",
+			           "Color": "Mauv",
+			           "FabricationYear": 1996,
+			           "Capacity": 3,
+			           "MaxSpeed": 239,
+			           "FuelType": "gas",
+			           "Transmission": "manual",
+			           "Weight": 152.87,
+			           "Height": 50.84,
+			           "Length": 0,
+			           "Width": 216.53
+			       },
+					"14": {
+			           "Id": 14,
+			           "Brand": "Chevrolet",
+			           "Model": "Suburban 2500",
+			           "Registration": "051",
+			           "Color": "Pink",
+			           "FabricationYear": 1997,
+			           "Capacity": 5,
+			           "MaxSpeed": 173,
+			           "FuelType": "gas",
+			           "Transmission": "automatic",
+			           "Weight": 65.95,
+			           "Height": 40.51,
+			           "Length": 0,
+			           "Width": 135.28
+			       }
+			   },
+			   "message": "vehicles found"
+			}`
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, "application/json; charset=utf-8", res.Header().Get("Content-Type"))
+		sv.AssertExpectations(t)
+
+	})
+
+	t.Run("failure - case01: should returns an error when it can't find vehicles under criteria", func(t *testing.T) {
+		// Arrange
+		expectedCarsListFiltered := map[int]internal.Vehicle{}
+
+		query := internal.SearchQuery{
+			FromWeight: 100.0,
+			ToWeight:   200.0,
+		}
+
+		ok := true
+		sv := service.NewVehicleDefaultMock()
+		sv.On("SearchByWeightRange", query, ok).Return(expectedCarsListFiltered, internal.ErrServiceNoVehicles)
+		hd := NewHandlerVehicle(sv)
+
+		// Act
+		r := chi.NewRouter()
+		r.Get("/vehicles/weight", hd.SearchByWeightRange())
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/weight?weight_min=100&weight_max=200", nil)
+		res := httptest.NewRecorder()
+		r.ServeHTTP(res, req)
+
+		// Assert
+		expectedCode := http.StatusNotFound
+		expectedBody := `{"status":"Not Found","message":"no vehicles found under criteria"}`
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, "application/json", res.Header().Get("Content-Type"))
+		sv.AssertExpectations(t)
+
+	})
+}
