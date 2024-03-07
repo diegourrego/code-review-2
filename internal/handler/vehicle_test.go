@@ -261,3 +261,68 @@ func TestHandlerVehicle_FindByBrandAndYearRange(t *testing.T) {
 		sv.AssertExpectations(t)
 	})
 }
+
+func TestHandlerVehicle_AverageMaxSpeedByBrand(t *testing.T) {
+	t.Run("success case 01: should returns max average speed", func(t *testing.T) {
+		// Arrange
+		carBrand := "Chevrolet"
+		sv := service.NewVehicleDefaultMock()
+		sv.On("AverageMaxSpeedByBrand", carBrand).Return(164.5, nil)
+
+		hd := NewHandlerVehicle(sv)
+		hdFunc := hd.AverageMaxSpeedByBrand()
+
+		// Act
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/average_speed/brand/Chevrolet", nil)
+		chiCtx := chi.NewRouteContext()
+		chiCtx.URLParams.Add("brand", carBrand)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+		res := httptest.NewRecorder()
+		hdFunc(res, req)
+
+		// Assert
+		expectedCode := http.StatusOK
+		expectedBody := `{
+		   "data": 164.5,
+		   "message": "average max speed found"
+		}`
+		expectedHeader := http.Header{
+			"Content-Type": []string{"application/json; charset=utf-8"},
+		}
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, expectedHeader, res.Header())
+
+	})
+
+	t.Run("failure case 01: should returns an error for an unknown brand", func(t *testing.T) {
+		// Arrange
+		carBrand := "Mercedes"
+		sv := service.NewVehicleDefaultMock()
+		sv.On("AverageMaxSpeedByBrand", carBrand).Return(0.0, internal.ErrServiceNoVehicles)
+
+		hd := NewHandlerVehicle(sv)
+		hdFunc := hd.AverageMaxSpeedByBrand()
+
+		// Act
+		req := httptest.NewRequest(http.MethodGet, "/vehicles/average_speed/brand/Mercedes", nil)
+		chiCtx := chi.NewRouteContext()
+		chiCtx.URLParams.Add("brand", carBrand)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+		res := httptest.NewRecorder()
+		hdFunc(res, req)
+
+		// Assert
+		expectedCode := http.StatusNotFound
+		expectedBody := `{"status":"Not Found","message":"vehicles not found"}`
+		expectedHeader := http.Header{
+			"Content-Type": []string{"application/json"},
+		}
+
+		require.Equal(t, expectedCode, res.Code)
+		require.JSONEq(t, expectedBody, res.Body.String())
+		require.Equal(t, expectedHeader, res.Header())
+
+	})
+}
